@@ -72,23 +72,6 @@ export function setExpensiveWorkspaceGitExecutor(executor: ExpensiveWorkspaceGit
 
 export const GIT_ARCHIVE_EXCLUDES = [".git", ".git/*"] as const;
 
-/**
- * Identity flags for commits the sync machinery itself creates (the merge
- * commits that reconcile concurrent histories). Execution hosts are often
- * containers with no git config and no resolvable hostname, so git cannot
- * auto-detect an identity there and `commit-tree` hard-fails with "Author
- * identity unknown" — which fails the whole run at finalize. Passing the
- * identity per invocation keeps every deployment working without host
- * configuration; `GIT_AUTHOR_*` / `GIT_COMMITTER_*` environment variables
- * still take precedence over `-c` when an operator sets them.
- */
-export const GIT_SYNC_COMMIT_IDENTITY_ARGS = [
-  "-c",
-  "user.name=Paperclip",
-  "-c",
-  "user.email=noreply@paperclip.ing",
-] as const;
-
 function shellQuote(value: string) {
   return `'${value.replace(/'/g, `'\"'\"'`)}'`;
 }
@@ -839,7 +822,7 @@ export async function createUnrelatedHistoryGraftCommit(input: {
   ].join("\n");
   const graftCommit = await runLocalGit(
     input.localDir,
-    [...GIT_SYNC_COMMIT_IDENTITY_ARGS, "commit-tree", importedTree, "-p", input.currentHead, "-m", message],
+    ["commit-tree", importedTree, "-p", input.currentHead, "-m", message],
     {
       timeout: 60_000,
       maxBuffer: 64 * 1024,
@@ -909,7 +892,7 @@ export async function integrateImportedGitHead(input: {
         localDir: input.localDir,
         currentHead,
         importedHead: input.importedHead,
-        syncLabel: "Paperclip remote git sync",
+        syncLabel: "remote git sync",
       });
       try {
         await runLocalGit(input.localDir, ["update-ref", headRef, graftCommit, currentHead], {
@@ -943,7 +926,6 @@ export async function integrateImportedGitHead(input: {
     const mergeCommit = await runLocalGit(
       input.localDir,
       [
-        ...GIT_SYNC_COMMIT_IDENTITY_ARGS,
         "commit-tree",
         mergedTreeId,
         "-p",
@@ -951,7 +933,7 @@ export async function integrateImportedGitHead(input: {
         "-p",
         input.importedHead,
         "-m",
-        `Paperclip remote git sync merge ${input.importedHead.slice(0, 12)}`,
+        `Merge remote git history ${input.importedHead.slice(0, 12)}`,
       ],
       {
         timeout: 60_000,

@@ -8,7 +8,6 @@ import { Transform } from "node:stream";
 import type { CommandManagedRuntimeRunner } from "./command-managed-runtime.js";
 import {
   createUnrelatedHistoryGraftCommit,
-  GIT_SYNC_COMMIT_IDENTITY_ARGS,
   readSanitizedOriginRemoteUrl,
 } from "./git-workspace-sync.js";
 import type { RunProcessResult } from "./server-utils.js";
@@ -1008,7 +1007,6 @@ async function integrateImportedGitHead(input: {
     const mergeCommit = await runLocalGit(
       input.localDir,
       [
-        ...GIT_SYNC_COMMIT_IDENTITY_ARGS,
         "commit-tree",
         mergedTreeId,
         "-p",
@@ -1016,7 +1014,7 @@ async function integrateImportedGitHead(input: {
         "-p",
         input.importedHead,
         "-m",
-        `Paperclip SSH sync merge ${input.importedHead.slice(0, 12)}`,
+        `Merge SSH git history ${input.importedHead.slice(0, 12)}`,
       ],
       {
         timeout: 60_000,

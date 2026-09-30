@@ -616,18 +616,18 @@ describe("git workspace sync", () => {
     }
   });
 
-  it("creates the concurrent-history merge commit with a deterministic identity", async () => {
+  it("creates the concurrent-history merge commit with the workspace Git identity", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-git-merge-identity-"));
     cleanupDirs.push(rootDir);
-    // No repo-local user.name/user.email on purpose: execution hosts are
-    // containers without git config, where commit-tree cannot auto-detect an
-    // identity. Setup commits pass their identity inline so only the merge
-    // commit under test depends on the sync-supplied identity.
+    // Setup commits use their identity inline. The responsible workspace
+    // identity is configured locally for the sync-created commit.
     const setupIdentity = ["-c", "user.name=Setup", "-c", "user.email=setup@paperclip.dev"];
     const repo = path.join(rootDir, "repo");
     await mkdir(repo, { recursive: true });
     await git(repo, ["init"]);
     await git(repo, ["checkout", "-b", "main"]);
+    await git(repo, ["config", "user.name", "Workspace Owner"]);
+    await git(repo, ["config", "user.email", "owner@example.test"]);
     await writeFile(path.join(repo, "tracked.txt"), "base\n", "utf8");
     await git(repo, ["add", "tracked.txt"]);
     await git(repo, [...setupIdentity, "commit", "-m", "base"]);
@@ -645,8 +645,8 @@ describe("git workspace sync", () => {
     const importedHead = await git(repo, ["rev-parse", "HEAD"]);
     await git(repo, ["checkout", "main"]);
 
-    // Ambient identity env vars would override the `-c` flags and make the
-    // assertion machine-dependent, so clear them for the call under test.
+    // Clear ambient identity so the repository's responsible-user config is
+    // the selected identity.
     const identityEnvKeys = ["GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL", "EMAIL"];
     const savedEnv = new Map(identityEnvKeys.map((key) => [key, process.env[key]]));
     for (const key of identityEnvKeys) delete process.env[key];
@@ -662,9 +662,9 @@ describe("git workspace sync", () => {
     const parents = (await git(repo, ["rev-list", "--parents", "-1", "HEAD"])).split(" ");
     expect(parents.slice(1)).toEqual([currentHead, importedHead]);
     expect(await git(repo, ["log", "-1", "--format=%an|%ae|%cn|%ce"]))
-      .toBe("Paperclip|noreply@paperclip.ing|Paperclip|noreply@paperclip.ing");
+      .toBe("Workspace Owner|owner@example.test|Workspace Owner|owner@example.test");
     expect(await git(repo, ["log", "-1", "--format=%s"]))
-      .toBe(`Paperclip remote git sync merge ${importedHead.slice(0, 12)}`);
+      .toBe(`Merge remote git history ${importedHead.slice(0, 12)}`);
     const mergedTree = await git(repo, ["ls-tree", "--name-only", "HEAD"]);
     expect(mergedTree).toContain("local.txt");
     expect(mergedTree).toContain("imported.txt");
@@ -701,7 +701,7 @@ describe("git workspace sync", () => {
     expect(await git(repo, ["rev-parse", "HEAD^{tree}"])).toBe(importedTree);
     expect(await git(repo, ["log", "-1", "--format=%s"])).toBe("sandbox rewrite");
     const body = await git(repo, ["log", "-1", "--format=%B"]);
-    expect(body).toContain(`Paperclip remote git sync graft ${importedHead.slice(0, 12)}`);
+    expect(body).toContain(`remote git sync graft ${importedHead.slice(0, 12)}`);
     expect(body).toContain("shares no ancestor");
   });
 
