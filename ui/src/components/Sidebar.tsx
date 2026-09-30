@@ -118,6 +118,7 @@ export function Sidebar({ children }: { children?: ReactNode }) {
 
   return (
     <aside
+      data-glass-sidebar
       className={cn(
         "w-full h-full min-h-0 flex flex-col",
         streamlinedUiEnabled

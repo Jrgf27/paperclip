@@ -10,6 +10,7 @@ import { formatCents, relativeTime } from "../lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { InlineBanner } from "../components/InlineBanner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +40,7 @@ export function Companies() {
     setSelectedCompanyId,
     loading,
     error,
+    retryCompanies,
   } = useCompany();
   const { openOnboarding } = useDialogActions();
   const { setBreadcrumbs } = useBreadcrumbs();
@@ -118,10 +120,16 @@ export function Companies() {
         )}
       </div>
 
-      <div className="h-6">
-        {loading && <p className="text-sm text-muted-foreground">Loading organizations...</p>}
-        {error && <p className="text-sm text-destructive">{error.message}</p>}
-      </div>
+      {loading && <p className="text-sm text-muted-foreground" role="status" aria-live="polite">Loading organizations…</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="Organizations could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void retryCompanies()}>Try again</Button>}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
 
       <div className="grid gap-4">
         {companies.map((company) => {
@@ -141,16 +149,6 @@ export function Companies() {
           return (
             <Card
               key={company.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => setSelectedCompanyId(company.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setSelectedCompanyId(company.id);
-                }
-              }}
-              interactive
               className={`block group text-left p-5 ${
                 selected ? "border-primary ring-1 ring-primary hover:border-primary" : ""
               }`}
@@ -187,7 +185,16 @@ export function Companies() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-base">{company.name}</h3>
+                      <h3>
+                        <button
+                          type="button"
+                          className="rounded-sm text-left font-semibold text-base text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          aria-pressed={selected}
+                          onClick={() => setSelectedCompanyId(company.id)}
+                        >
+                          {company.name}
+                        </button>
+                      </h3>
                       <Badge variant="ghost"
                         className={`text-(length:--text-micro) ${
                           company.status === "active"
@@ -201,8 +208,8 @@ export function Companies() {
                       </Badge>
                       <Button
                         variant="ghost"
-                        size="icon-xs"
-                        className="text-muted-foreground opacity-0 group-hover:opacity-100"
+                        size="icon-sm"
+                        className="text-muted-foreground opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           startEdit(company.id, company.name);
@@ -225,8 +232,8 @@ export function Companies() {
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
-                        size="icon-xs"
-                        className="text-muted-foreground opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+                        size="icon-sm"
+                        className="text-muted-foreground opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 data-[state=open]:opacity-100"
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>

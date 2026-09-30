@@ -13,9 +13,11 @@ import { approvalLabel, typeIcon, defaultTypeIcon, ApprovalPayloadRenderer } fro
 import { PageSkeleton } from "../components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, ChevronRight, Sparkles } from "lucide-react";
+import { CheckCircle2, ChevronRight, FileQuestion, Sparkles } from "lucide-react";
 import type { ApprovalComment } from "@paperclipai/shared";
 import { MarkdownBody } from "../components/MarkdownBody";
+import { EmptyState } from "../components/EmptyState";
+import { InlineBanner } from "../components/InlineBanner";
 
 export function ApprovalDetail() {
   const { approvalId } = useParams<{ approvalId: string }>();
@@ -28,7 +30,7 @@ export function ApprovalDetail() {
   const [error, setError] = useState<string | null>(null);
   const [showRawPayload, setShowRawPayload] = useState(false);
 
-  const { data: approval, isLoading } = useQuery({
+  const { data: approval, isLoading, error: loadError, refetch: refetchApproval } = useQuery({
     queryKey: queryKeys.approvals.detail(approvalId!),
     queryFn: () => approvalsApi.get(approvalId!),
     enabled: !!approvalId,
@@ -143,7 +145,20 @@ export function ApprovalDetail() {
   });
 
   if (isLoading) return <PageSkeleton variant="detail" />;
-  if (!approval) return <p className="text-sm text-muted-foreground">Approval not found.</p>;
+  if (loadError && !approval) {
+    return (
+      <InlineBanner
+        tone="danger"
+        title="Approval could not be loaded."
+        actions={<Button size="sm" variant="outline" onClick={() => void refetchApproval()}>Try again</Button>}
+      >
+        {loadError instanceof Error ? loadError.message : "The approval could not be retrieved."}
+      </InlineBanner>
+    );
+  }
+  if (!approval) {
+    return <EmptyState icon={FileQuestion} title="Approval not found" message="It may have been removed or the link may be incorrect." />;
+  }
 
   const payload = approval.payload as Record<string, unknown>;
   const linkedAgentId = typeof payload.agentId === "string" ? payload.agentId : null;
@@ -173,6 +188,15 @@ export function ApprovalDetail() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {loadError && (
+        <InlineBanner
+          tone="danger"
+          title="Approval could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetchApproval()}>Try again</Button>}
+        >
+          {loadError instanceof Error ? loadError.message : "The approval could not be retrieved."}
+        </InlineBanner>
+      )}
       {showApprovedBanner && (
         <div className="border border-green-300 dark:border-green-700/40 bg-green-50 dark:bg-green-900/20 rounded-lg px-4 py-3 animate-in fade-in zoom-in-95 duration-300">
           <div className="flex items-start justify-between gap-3">
@@ -238,7 +262,7 @@ export function ApprovalDetail() {
             <p className="text-xs text-muted-foreground">Decision note: {approval.decisionNote}</p>
           )}
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <InlineBanner tone="danger" title="The action could not be completed." compact>{error}</InlineBanner>}
         {linkedIssues && linkedIssues.length > 0 && (
           <div className="pt-2 border-t border-border/60">
             <p className="text-xs text-muted-foreground mb-1.5">Linked Tasks</p>

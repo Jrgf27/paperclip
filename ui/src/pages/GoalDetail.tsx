@@ -15,10 +15,12 @@ import { StatusBadge } from "../components/StatusBadge";
 import { InlineEditor } from "../components/InlineEditor";
 import { EntityRow } from "../components/EntityRow";
 import { PageSkeleton } from "../components/PageSkeleton";
+import { InlineBanner } from "../components/InlineBanner";
+import { EmptyState } from "../components/EmptyState";
 import { cn, projectUrl } from "../lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, SlidersHorizontal } from "lucide-react";
+import { Plus, SlidersHorizontal, Target } from "lucide-react";
 import type { Goal, Project } from "@paperclipai/shared";
 
 interface GoalPropertiesToggleButtonProps {
@@ -57,7 +59,8 @@ export function GoalDetail() {
   const {
     data: goal,
     isLoading,
-    error
+    error,
+    refetch: refetchGoal,
   } = useQuery({
     queryKey: queryKeys.goals.detail(goalId!),
     queryFn: () => goalsApi.get(goalId!),
@@ -136,11 +139,32 @@ export function GoalDetail() {
   }, [goal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) return <PageSkeleton variant="detail" />;
-  if (error) return <p className="text-sm text-destructive">{error.message}</p>;
-  if (!goal) return null;
+  if (error && !goal) {
+    return (
+      <InlineBanner
+        tone="danger"
+        title="The goal could not be loaded."
+        actions={<Button size="sm" variant="outline" onClick={() => void refetchGoal()}>Try again</Button>}
+      >
+        {error.message}
+      </InlineBanner>
+    );
+  }
+  if (!goal) {
+    return <EmptyState icon={Target} title="Goal not found" message="It may have been deleted or the link may be incorrect." />;
+  }
 
   return (
     <div className="space-y-6">
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="The goal could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetchGoal()}>Try again</Button>}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <span className="text-xs uppercase text-muted-foreground">

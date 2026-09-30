@@ -38,6 +38,7 @@ import {
 } from "../lib/attention";
 import { cn } from "../lib/utils";
 import { PageSkeleton } from "../components/PageSkeleton";
+import { InlineBanner } from "../components/InlineBanner";
 import { AttentionQueueRow } from "../components/AttentionQueueRow";
 import { DecisionsToolbar } from "../components/DecisionsToolbar";
 import { Curtain, AgingItemRow } from "../components/DecisionShelf";
@@ -95,6 +96,7 @@ export function DecisionQueuePage() {
     data: feed,
     isLoading,
     error,
+    refetch: refetchFeed,
   } = useQuery({
     queryKey: [
       ...queryKeys.attention(selectedCompanyId!),
@@ -260,9 +262,17 @@ export function DecisionQueuePage() {
         />
       )}
 
-      {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="The decision queue could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetchFeed()}>Try again</Button>}
+        >
+          {(error as Error).message}
+        </InlineBanner>
+      )}
 
-      {isEmpty ? (
+      {error && !feed ? null : isEmpty && !error ? (
         <div className="rounded-xl border border-dashed border-border py-14 text-center">
           <p className="text-sm font-medium text-foreground">This queue is empty.</p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -271,7 +281,7 @@ export function DecisionQueuePage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {visibleCount === 0 ? (
+          {visibleCount === 0 && !error ? (
             <div className="rounded-xl border border-dashed border-border py-10 text-center">
               <p className="text-sm font-medium text-foreground">No decisions match your filters.</p>
               <p className="mt-1 text-xs text-muted-foreground">Adjust or clear the filters to see the rest.</p>

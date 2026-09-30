@@ -71,6 +71,7 @@ import {
   useLocalInboxArchiveIssueIds,
 } from "../lib/inboxArchiveCache";
 import { EmptyState } from "../components/EmptyState";
+import { InlineBanner } from "../components/InlineBanner";
 import { CollectionToolbar, type CollectionToolbarProps } from "../components/CollectionToolbar";
 import { IssueGroupHeader } from "../components/IssueGroupHeader";
 import { PageSkeleton } from "../components/PageSkeleton";
@@ -904,6 +905,7 @@ function StreamlinedInbox() {
     data: approvals,
     isLoading: isApprovalsLoading,
     error: approvalsError,
+    refetch: refetchApprovals,
   } = useQuery({
     queryKey: queryKeys.approvals.list(selectedCompanyId!),
     queryFn: () => approvalsApi.list(selectedCompanyId!),
@@ -2682,8 +2684,16 @@ function StreamlinedInbox() {
         ) : null}
       />
 
-      {approvalsError && <p className="text-sm text-destructive">{approvalsError.message}</p>}
-      {actionError && <p className="text-sm text-destructive">{actionError}</p>}
+      {approvalsError && (
+        <InlineBanner
+          tone="danger"
+          title="Approvals could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetchApprovals()}>Try again</Button>}
+        >
+          {approvalsError.message}
+        </InlineBanner>
+      )}
+      {actionError && <InlineBanner tone="danger" title="The inbox action failed.">{actionError}</InlineBanner>}
 
       {tab === "blocked" ? (
         <div className="-mx-2 sm:mx-0">

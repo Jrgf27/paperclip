@@ -47,6 +47,8 @@ import { DecisionQueueRail } from "../components/DecisionQueueRail";
 import { DecisionDateChips, type AttentionCustomRange } from "../components/DecisionDateChips";
 import { DecisionResolver } from "../components/DecisionResolver";
 import { IssueGroupHeader } from "../components/IssueGroupHeader";
+import { InlineBanner } from "../components/InlineBanner";
+import { Button } from "@/components/ui/button";
 
 /** Curtain rows never expand; module-level so memoized rows see one identity. */
 const noopToggleExpand = () => {};
@@ -148,6 +150,7 @@ export function WhatNeedsMe() {
     data: feed,
     isLoading,
     error,
+    refetch: refetchFeed,
   } = useQuery({
     // Distinct from the sidebar badge's `queryKeys.attention` so dismissed rows
     // (needed for the curtains) never inflate the badge count. Invalidating the
@@ -546,9 +549,17 @@ export function WhatNeedsMe() {
         />
       </div>
 
-      {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="The attention feed could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetchFeed()}>Try again</Button>}
+        >
+          {(error as Error).message}
+        </InlineBanner>
+      )}
 
-      {!hasAnything ? (
+      {error && !feed ? null : !hasAnything && !error ? (
         <ZeroState />
       ) : (
         <div className="space-y-4">

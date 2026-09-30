@@ -197,6 +197,7 @@ export function SidebarShell({
   return (
     <div className={cn("relative h-full shrink-0", className)} style={reservedStyle}>
       <div
+        data-glass-sidebar
         className={cn(
           "absolute inset-y-0 left-0 flex flex-col overflow-hidden",
           // Open/close is instant (PAP-10676): no width transition so the rail and
@@ -204,7 +205,7 @@ export function SidebarShell({
           // Overlay styling only while the panel is wider than its reserved
           // spacer (i.e. peeking) so it floats above content without reflow.
           isOverlay
-            ? "z-30 border-r border-border bg-background shadow-lg"
+            ? "z-30 border-r border-border bg-glass-panel shadow-glass backdrop-blur-glass"
             : "z-0",
         )}
         style={panelStyle}

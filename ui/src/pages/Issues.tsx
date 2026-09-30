@@ -149,6 +149,7 @@ export function Issues() {
     error,
     hasNextPage,
     fetchNextPage,
+    refetch,
   } = useInfiniteQuery({
     queryKey: [
       ...queryKeys.issues.list(selectedCompanyId!),
@@ -214,12 +215,14 @@ export function Issues() {
       isLoading={isLoading}
       isLoadingMoreIssues={isFetchingNextPage}
       error={error as Error | null}
+      onRetryLoadIssues={() => void refetch()}
       agents={agents}
       projects={projects}
       liveIssueIds={liveIssueIds}
       viewStateKey="paperclip:issues-view"
       rowPresentation={issuesPresentation.rowPresentation}
       toolbarPresentation={issuesPresentation.toolbarPresentation}
+      showPageHeading
       issueLinkState={issueLinkState}
       initialAssignees={searchParams.get("assignee") ? [searchParams.get("assignee")!] : undefined}
       initialWorkspaces={initialWorkspaces.length > 0 ? initialWorkspaces : undefined}

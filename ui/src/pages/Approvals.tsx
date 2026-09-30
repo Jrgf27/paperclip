@@ -13,6 +13,9 @@ import { ShieldCheck } from "lucide-react";
 import { ApprovalCard } from "../components/ApprovalCard";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "../components/EmptyState";
+import { InlineBanner } from "../components/InlineBanner";
 
 type StatusFilter = "pending" | "all";
 
@@ -30,7 +33,7 @@ export function Approvals() {
     setBreadcrumbs([{ label: "Approvals" }]);
   }, [setBreadcrumbs]);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.approvals.list(selectedCompanyId!),
     queryFn: () => approvalsApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId,
@@ -76,7 +79,7 @@ export function Approvals() {
   ).length;
 
   if (!selectedCompanyId) {
-    return <p className="text-sm text-muted-foreground">Select an organization first.</p>;
+    return <EmptyState icon={ShieldCheck} message="Select an organization to view approvals." />;
   }
 
   if (isLoading) {
@@ -101,16 +104,27 @@ export function Approvals() {
         </Tabs>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
-      {actionError && <p className="text-sm text-destructive">{actionError}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="Approvals could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetch()}>Try again</Button>}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
+      {actionError && (
+        <InlineBanner tone="danger" title="The approval action failed.">
+          {actionError}
+        </InlineBanner>
+      )}
 
-      {filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <ShieldCheck className="h-8 w-8 text-muted-foreground/30 mb-3" />
-          <p className="text-sm text-muted-foreground">
-            {statusFilter === "pending" ? "No pending approvals." : "No approvals yet."}
-          </p>
-        </div>
+      {filtered.length === 0 && !error && (
+        <EmptyState
+          icon={ShieldCheck}
+          title={statusFilter === "pending" ? "All caught up" : "No approvals yet"}
+          message={statusFilter === "pending" ? "There are no approvals waiting for review." : "Approvals will appear here when an agent requests a governed action."}
+        />
       )}
 
       {filtered.length > 0 && (

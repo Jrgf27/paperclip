@@ -28,7 +28,7 @@ import { ActivityRow } from "../components/ActivityRow";
 import { timeAgo } from "../lib/timeAgo";
 import { cn, formatCents } from "../lib/utils";
 import { SHOW_TASK_PRIORITY_UI } from "../lib/ui-flags";
-import { Bot, CircleDot, DollarSign, ShieldCheck, LayoutDashboard, PauseCircle } from "lucide-react";
+import { AlertTriangle, Bot, CircleDot, DollarSign, ShieldCheck, LayoutDashboard, PauseCircle } from "lucide-react";
 import { ActiveAgentsPanel } from "../components/ActiveAgentsPanel";
 import { ChartCard, RunActivityChart, PriorityChart, IssueStatusChart, SuccessRateChart } from "../components/ActivityCharts";
 import { PageSkeleton } from "../components/PageSkeleton";
@@ -165,7 +165,7 @@ export function Dashboard() {
     queryKey: dashboardQueryKey,
     enabled: !!selectedCompanyId,
   });
-  const { data, isLoading, error, dataUpdatedAt: dashboardUpdatedAt } = useQuery({
+  const { data, isLoading, error, refetch: refetchDashboard, dataUpdatedAt: dashboardUpdatedAt } = useQuery({
     queryKey: dashboardQueryKey,
     queryFn: () => dashboardApi.summary(selectedCompanyId!),
     enabled: !!selectedCompanyId,
@@ -322,7 +322,15 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="Dashboard data could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetchDashboard()}>Try again</Button>}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
 
       {pausedBanner?.kind === "imported" ? (
         <InlineBanner
@@ -358,23 +366,21 @@ export function Dashboard() {
       ) : null}
 
       {hasNoAgents && (
-        <div className="flex items-center justify-between gap-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-950/60">
-          <div className="flex items-center gap-2.5">
-            <Bot className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            <p className="text-sm text-amber-900 dark:text-amber-100">
-              You have no agents.
-            </p>
-          </div>
-          <button
-            onClick={() => openOnboarding({ initialStep: 3, companyId: selectedCompanyId! })}
-            className="text-sm font-medium text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100 underline underline-offset-2 shrink-0"
-          >
-            Create one here
-          </button>
-        </div>
+        <InlineBanner
+          tone="warning"
+          icon={Bot}
+          title="You have no agents."
+          actions={(
+            <Button size="sm" onClick={() => openOnboarding({ initialStep: 3, companyId: selectedCompanyId! })}>
+              Create an agent
+            </Button>
+          )}
+        >
+          Create your first agent to start assigning and running tasks.
+        </InlineBanner>
       )}
 
-      <ActiveAgentsPanel companyId={selectedCompanyId!} />
+      {!data && <ActiveAgentsPanel companyId={selectedCompanyId!} />}
 
       {data && (
         <>
@@ -396,6 +402,31 @@ export function Dashboard() {
               </Link>
             </div>
           ) : null}
+
+          {(data.tasks.blocked > 0 || data.agents.error > 0 || data.pendingApprovals + data.budgets.pendingApprovals > 0) && (
+            <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                  <AlertTriangle className="size-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold">Needs attention</h2>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {[
+                      data.tasks.blocked > 0 && `${data.tasks.blocked} blocked task${data.tasks.blocked === 1 ? "" : "s"}`,
+                      data.agents.error > 0 && `${data.agents.error} agent${data.agents.error === 1 ? "" : "s"} with errors`,
+                      data.pendingApprovals + data.budgets.pendingApprovals > 0 && `${data.pendingApprovals + data.budgets.pendingApprovals} approval${data.pendingApprovals + data.budgets.pendingApprovals === 1 ? "" : "s"} waiting`,
+                    ].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+                {data.tasks.blocked > 0 && <Button variant="outline" size="sm" asChild><Link to="/issues">Review tasks</Link></Button>}
+                {data.agents.error > 0 && <Button variant="outline" size="sm" asChild><Link to="/agents">Review agents</Link></Button>}
+                {data.pendingApprovals + data.budgets.pendingApprovals > 0 && <Button size="sm" asChild><Link to="/approvals">Review approvals</Link></Button>}
+              </div>
+            </Card>
+          )}
 
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-1 sm:gap-2">
             <MetricCard
@@ -450,6 +481,8 @@ export function Dashboard() {
               }
             />
           </div>
+
+          <ActiveAgentsPanel companyId={selectedCompanyId!} />
 
           <SmokeLabDashboardCard companyId={selectedCompanyId!} />
 

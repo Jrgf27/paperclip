@@ -21,6 +21,7 @@ import { FinanceBillerCard } from "../components/FinanceBillerCard";
 import { FinanceKindCard } from "../components/FinanceKindCard";
 import { FinanceTimelineCard } from "../components/FinanceTimelineCard";
 import { Identity } from "../components/Identity";
+import { InlineBanner } from "../components/InlineBanner";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { PageTabBar } from "../components/PageTabBar";
 import { ProviderQuotaCard } from "../components/ProviderQuotaCard";
@@ -192,7 +193,7 @@ export function Costs() {
   const weekRange = useMemo(() => currentWeekRange(), [today]);
   const companyId = selectedCompanyId ?? NO_COMPANY;
 
-  const { data: budgetData, isLoading: budgetLoading, error: budgetError } = useQuery({
+  const { data: budgetData, isLoading: budgetLoading, error: budgetError, refetch: refetchBudget } = useQuery({
     queryKey: queryKeys.budgets.overview(companyId),
     queryFn: () => budgetsApi.overview(companyId),
     enabled: !!selectedCompanyId && customReady,
@@ -230,7 +231,7 @@ export function Costs() {
     onSuccess: invalidateBudgetViews,
   });
 
-  const { data: spendData, isLoading: spendLoading, error: spendError } = useQuery({
+  const { data: spendData, isLoading: spendLoading, error: spendError, refetch: refetchSpend } = useQuery({
     queryKey: queryKeys.costs(companyId, from || undefined, to || undefined),
     queryFn: async () => {
       const [summary, byAgent, byProject, byAgentModel] = await Promise.all([
@@ -244,7 +245,7 @@ export function Costs() {
     enabled: !!selectedCompanyId && customReady,
   });
 
-  const { data: financeData, isLoading: financeLoading, error: financeError } = useQuery({
+  const { data: financeData, isLoading: financeLoading, error: financeError, refetch: refetchFinance } = useQuery({
     queryKey: [
       queryKeys.financeSummary(companyId, from || undefined, to || undefined),
       queryKeys.financeByBiller(companyId, from || undefined, to || undefined),
@@ -634,7 +635,13 @@ export function Costs() {
           ) : showOverviewLoading ? (
             <PageSkeleton variant="costs" />
           ) : overviewError ? (
-            <p className="text-sm text-destructive">{(overviewError as Error).message}</p>
+            <InlineBanner
+              tone="danger"
+              title="Cost data is unavailable."
+              actions={<Button size="sm" variant="outline" onClick={() => { void refetchSpend(); void refetchFinance(); }}>Try again</Button>}
+            >
+              {(overviewError as Error).message}
+            </InlineBanner>
           ) : (
             <>
               {activeBudgetIncidents.length > 0 ? (
@@ -837,7 +844,13 @@ export function Costs() {
           {budgetLoading ? (
             <PageSkeleton variant="costs" />
           ) : budgetError ? (
-            <p className="text-sm text-destructive">{(budgetError as Error).message}</p>
+            <InlineBanner
+              tone="danger"
+              title="Budget data is unavailable."
+              actions={<Button size="sm" variant="outline" onClick={() => void refetchBudget()}>Try again</Button>}
+            >
+              {(budgetError as Error).message}
+            </InlineBanner>
           ) : (
             <>
               <Card className="border-border/70 bg-(image:--gradient-extract-2)">
@@ -1064,7 +1077,13 @@ export function Costs() {
           ) : financeLoading ? (
             <PageSkeleton variant="costs" />
           ) : financeError ? (
-            <p className="text-sm text-destructive">{(financeError as Error).message}</p>
+            <InlineBanner
+              tone="danger"
+              title="Finance data is unavailable."
+              actions={<Button size="sm" variant="outline" onClick={() => void refetchFinance()}>Try again</Button>}
+            >
+              {(financeError as Error).message}
+            </InlineBanner>
           ) : (
             <>
               <FinanceSummaryCard

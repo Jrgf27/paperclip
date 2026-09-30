@@ -12,6 +12,17 @@ Agents and humans modifying `ui/` treat this file as the source of truth for des
 
 Paperclip is an operational control plane: org charts, tasks, heartbeat runs, budgets, approvals, audit logs. The user is an operator scanning state and making decisions. Every screen should answer, in order: *what is happening, does it need me, what do I do about it.* Density in service of scanning beats whitespace in service of aesthetics — but density comes from information, never from chrome.
 
+## Surface material: glass
+
+The application uses a restrained glass treatment for its shared shell, cards,
+and floating controls. A cool, low-contrast canvas glow sits behind translucent
+panels; thin bright edges and soft shadows define their depth. Keep dense task
+content, tables, and forms legible first: reserve backdrop blur for shell and
+floating surfaces instead of applying it to every card. Light and dark themes
+each define their own surface, stroke, shadow, and ambient-light tokens in
+`ui/src/index.css`, with an opaque fallback when backdrop filtering is
+unavailable.
+
 ## The token layer (where visual values live)
 
 The single token source is **`ui/src/index.css`** (Tailwind v4; there is no tailwind config file — tokens are CSS custom properties consumed via `@theme`). Do NOT create a parallel token source such as `ui/src/tokens/` — that would produce two sources of truth. If index.css grows unwieldy, extracted values may live in a `tokens.css` **imported by index.css** so the pipeline still has one root.

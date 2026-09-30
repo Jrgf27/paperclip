@@ -12,6 +12,7 @@ import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { queryKeys } from "../lib/queryKeys";
 import { EmptyState } from "../components/EmptyState";
 import { PageSkeleton } from "../components/PageSkeleton";
+import { InlineBanner } from "../components/InlineBanner";
 import { ArtifactCard } from "../components/artifacts/ArtifactCard";
 import { ArtifactGroupCard } from "../components/artifacts/ArtifactGroupCard";
 import { useSearchParams, Link } from "@/lib/router";
@@ -176,6 +177,7 @@ export function Artifacts() {
     hasNextPage,
     fetchNextPage,
     error,
+    refetch,
   } = useInfiniteQuery({
     queryKey: queryKeys.artifacts.list(selectedCompanyId!, kind, query, groupBy, groupIssueId),
     queryFn: ({ pageParam }) =>
@@ -343,11 +345,19 @@ export function Artifacts() {
         </div>
       ) : null}
 
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="Artifacts could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetch()}>Try again</Button>}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
 
       {isLoading ? (
         <PageSkeleton variant="list" />
-      ) : items.length === 0 ? (
+      ) : error && !data ? null : items.length === 0 && !error ? (
         <EmptyState icon={showGroupCards ? Layers : Package} message={emptyMessage} />
       ) : (
         <>

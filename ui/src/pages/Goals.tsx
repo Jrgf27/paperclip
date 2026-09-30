@@ -8,6 +8,7 @@ import { queryKeys } from "../lib/queryKeys";
 import { GoalTree } from "../components/GoalTree";
 import { EmptyState } from "../components/EmptyState";
 import { PageSkeleton } from "../components/PageSkeleton";
+import { InlineBanner } from "../components/InlineBanner";
 import { Button } from "@/components/ui/button";
 import { Target, Plus } from "lucide-react";
 
@@ -20,7 +21,7 @@ export function Goals() {
     setBreadcrumbs([{ label: "Goals" }]);
   }, [setBreadcrumbs]);
 
-  const { data: goals, isLoading, error } = useQuery({
+  const { data: goals, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.goals.list(selectedCompanyId!),
     queryFn: () => goalsApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId,
@@ -36,9 +37,17 @@ export function Goals() {
 
   return (
     <div className="space-y-4">
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="Goals could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetch()}>Try again</Button>}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
 
-      {goals && goals.length === 0 && (
+      {goals && goals.length === 0 && !error && (
         <EmptyState
           icon={Target}
           message="No goals yet."

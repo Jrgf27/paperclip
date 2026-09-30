@@ -619,7 +619,7 @@ export function Layout({ sidebarSections }: { sidebarSections?: ReactNode }) {
     <ChatSetupSidebarProvider>
       <div
       className={cn(
-        "bg-background text-foreground pt-(--sz-safe-top)",
+        "glass-app-canvas text-foreground pt-(--sz-safe-top)",
         // overflow-x-clip on mobile keeps a stray wide descendant from making the
         // whole viewport scroll horizontally. clip (not hidden) leaves overflow-y
         // computed as visible, so native body scroll + the sticky breadcrumb keep

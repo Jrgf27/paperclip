@@ -17,6 +17,7 @@ import { queryKeys } from "../lib/queryKeys";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { cn } from "../lib/utils";
 import { useSignOut } from "@/hooks/useSignOut";
+import { InlineBanner } from "../components/InlineBanner";
 
 const FEEDBACK_TERMS_URL = import.meta.env.VITE_FEEDBACK_TERMS_URL?.trim() || "https://paperclip.ing/tos";
 
@@ -67,11 +68,13 @@ export function InstanceGeneralSettings({ embedded = false }: { embedded?: boole
 
   if (generalQuery.error) {
     return (
-      <div className="text-sm text-destructive">
-        {generalQuery.error instanceof Error
-          ? generalQuery.error.message
-          : "Failed to load general settings."}
-      </div>
+      <InlineBanner
+        tone="danger"
+        title="General settings could not be loaded."
+        actions={<Button size="sm" variant="outline" onClick={() => void generalQuery.refetch()}>Try again</Button>}
+      >
+        {generalQuery.error instanceof Error ? generalQuery.error.message : "Failed to load general settings."}
+      </InlineBanner>
     );
   }
 
@@ -114,9 +117,19 @@ export function InstanceGeneralSettings({ embedded = false }: { embedded?: boole
       ) : null}
 
       {visibleActionError && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+        <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {visibleActionError}
         </div>
+      )}
+
+      {healthQuery.error && (
+        <InlineBanner
+          tone="warning"
+          title="Some setting visibility controls could not be checked."
+          actions={<Button size="sm" variant="outline" onClick={() => void healthQuery.refetch()}>Try again</Button>}
+        >
+          {healthQuery.error instanceof Error ? healthQuery.error.message : "Visibility configuration could not be loaded."}
+        </InlineBanner>
       )}
 
       {showDeploymentStatus && (

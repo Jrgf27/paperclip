@@ -15,7 +15,7 @@ export function MetricCard({ icon: Icon, value, label, description, to, onClick 
   const isClickable = !!(to || onClick);
 
   const inner = (
-    <div className={`h-full px-4 py-4 sm:px-5 sm:py-5 rounded-lg transition-colors${isClickable ? " hover:bg-accent/50 cursor-pointer" : ""}`}>
+    <div className={`h-full rounded-xl border border-glass-stroke bg-glass-panel px-4 py-4 shadow-glass transition-colors sm:px-5 sm:py-5${isClickable ? " hover:border-foreground/20 hover:bg-glass-panel-raised" : ""}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums">
@@ -35,7 +35,7 @@ export function MetricCard({ icon: Icon, value, label, description, to, onClick 
 
   if (to) {
     return (
-      <Link to={to} className="no-underline text-inherit h-full" onClick={onClick}>
+      <Link to={to} className="no-underline text-inherit h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" onClick={onClick}>
         {inner}
       </Link>
     );
@@ -43,9 +43,9 @@ export function MetricCard({ icon: Icon, value, label, description, to, onClick 
 
   if (onClick) {
     return (
-      <div className="h-full" onClick={onClick}>
+      <button type="button" className="h-full w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" onClick={onClick}>
         {inner}
-      </div>
+      </button>
     );
   }
 

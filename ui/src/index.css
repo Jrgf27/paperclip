@@ -75,6 +75,10 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-glass-panel: var(--glass-panel);
+  --color-glass-panel-raised: var(--glass-panel-raised);
+  --color-glass-panel-fallback: var(--glass-panel-fallback);
+  --color-glass-stroke: var(--glass-stroke);
   /* Multiplicative radius ladder (modern shadcn/Tailwind v4 mapping):
      sm/md/lg/xl/2xl/3xl/4xl = 0.6/0.8/1.0/1.4/1.8/2.2/2.6 x the single
      --radius knob (base anchor 0.5rem = 8px; rounded-lg IS the anchor).
@@ -88,6 +92,8 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --blur-glass: var(--glass-blur);
+  --shadow-glass: 0 16px 42px -24px var(--glass-shadow);
 }
 
 :root {
@@ -96,11 +102,11 @@
   --file-tree-indent-step: calc(var(--spacing) * 6);
   --file-tree-indent-max: 40%;
   --radius: 0.5rem;
-  --background: oklch(1 0 0);
+  --background: oklch(0.975 0.012 252);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: oklch(1 0 0 / 0.78);
   --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.995 0.008 252 / 0.92);
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
@@ -132,6 +138,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --glass-panel: oklch(0.995 0.008 252 / 0.84);
+  --glass-panel-raised: oklch(0.995 0.008 252 / 0.94);
+  --glass-panel-fallback: oklch(0.995 0.008 252);
+  --glass-stroke: oklch(1 0.015 252 / 0.82);
+  --glass-shadow: oklch(0.38 0.08 258 / 0.2);
+  --glass-blur: 24px;
+  --glass-orb-blue: oklch(0.76 0.11 250 / 0.34);
+  --glass-orb-violet: oklch(0.82 0.1 300 / 0.3);
+  --glass-orb-teal: oklch(0.82 0.09 190 / 0.24);
   --chip-match-title-bg: oklch(0.97 0.02 265);
   --chip-match-title-fg: oklch(0.4 0.13 265);
   --chip-match-title-border: oklch(0.85 0.05 265);
@@ -387,14 +402,14 @@
 }
 
 .dark {
-  --background: oklch(0.205 0 0);
+  --background: oklch(0.16 0.026 262);
   --foreground: oklch(0.985 0 0);
   --side-panel-bg: var(--background);
   --side-panel-fg: oklch(0.985 0 0);
   --streamlined-task-detail-bg: var(--background);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.23 0.03 262 / 0.78);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.22 0.03 262 / 0.92);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
@@ -425,6 +440,14 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --glass-panel: oklch(0.22 0.032 262 / 0.84);
+  --glass-panel-raised: oklch(0.24 0.034 262 / 0.94);
+  --glass-panel-fallback: oklch(0.22 0.032 262);
+  --glass-stroke: oklch(0.9 0.035 260 / 0.16);
+  --glass-shadow: oklch(0.05 0.03 262 / 0.58);
+  --glass-orb-blue: oklch(0.44 0.15 258 / 0.35);
+  --glass-orb-violet: oklch(0.4 0.13 300 / 0.3);
+  --glass-orb-teal: oklch(0.38 0.1 190 / 0.22);
   --chip-match-title-bg: oklch(0.27 0.04 265 / 0.5);
   --chip-match-title-fg: oklch(0.78 0.10 265);
   --chip-match-title-border: oklch(0.4 0.06 265);
@@ -1017,13 +1040,82 @@
    fading into the row surface like the task-detail tab close control. */
 .primary-sidebar-surface {
   --sidebar-action-rest-surface: color-mix(in srgb, var(--border) 50%, var(--background));
-  background-color: var(--sidebar-action-rest-surface);
+  background-color: var(--glass-panel);
+  border-right: 1px solid var(--glass-stroke);
+  backdrop-filter: blur(var(--glass-blur)) saturate(145%);
 }
 .dark .primary-sidebar-surface {
-  --sidebar-action-rest-surface: var(--muted);
+  --sidebar-action-rest-surface: color-mix(in srgb, var(--muted) 72%, transparent);
 }
 .sidebar-action-row {
   --sidebar-action-surface: var(--sidebar-action-rest-surface, var(--background));
+}
+
+/* A calm, layered glass canvas gives translucent panels something to refract.
+   The glow stays fixed behind the app while routes and panels scroll. */
+.glass-app-canvas {
+  position: relative;
+  isolation: isolate;
+  color: var(--foreground);
+}
+.glass-app-canvas::before {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse at 12% 8%, var(--glass-orb-blue), transparent 44%),
+    radial-gradient(ellipse at 88% 18%, var(--glass-orb-violet), transparent 40%),
+    radial-gradient(ellipse at 72% 92%, var(--glass-orb-teal), transparent 42%);
+}
+[data-slot="popover-content"],
+[data-slot="dropdown-menu-content"],
+[data-slot="select-content"],
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"],
+[data-slot="sheet-content"] {
+  border-color: var(--glass-stroke);
+  background-color: var(--glass-panel-raised);
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+}
+.glass-app-canvas [data-glass-sidebar] {
+  border-color: var(--glass-stroke);
+  background-color: var(--glass-panel);
+  backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+}
+.glass-app-canvas [data-secondary-sidebar] {
+  background-color: var(--glass-panel);
+  backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  [data-slot="card"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"],
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="sheet-content"],
+  [data-glass-sidebar],
+  .glass-app-canvas [data-secondary-sidebar] {
+    background-color: var(--glass-panel-fallback);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-slot="card"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"],
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="sheet-content"],
+  [data-glass-sidebar],
+  .glass-app-canvas [data-secondary-sidebar] {
+    background-color: var(--glass-panel-fallback);
+    backdrop-filter: none;
+  }
 }
 .sidebar-action-row:is(:hover, :focus-within),
 .sidebar-action-row:has(.sidebar-action-link[aria-current="page"]),

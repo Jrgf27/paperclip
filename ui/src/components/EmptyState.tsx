@@ -26,8 +26,8 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="bg-muted/50 p-4 mb-4">
-        <Icon className="h-10 w-10 text-muted-foreground/50" />
+      <div className="mb-4 rounded-2xl border border-glass-stroke bg-glass-panel p-4 shadow-glass">
+        <Icon className="h-10 w-10 text-muted-foreground/60" aria-hidden="true" />
       </div>
       {title ? (
         <>

@@ -20,6 +20,7 @@ import { EntityRow } from "../components/EntityRow";
 import { BuiltInLifecycleChip } from "../components/BuiltInAgentBadges";
 import { EmptyState } from "../components/EmptyState";
 import { PageSkeleton } from "../components/PageSkeleton";
+import { InlineBanner } from "../components/InlineBanner";
 import { relativeTime, cn, agentRouteRef, agentUrl } from "../lib/utils";
 import { PageTabBar } from "../components/PageTabBar";
 import { Tabs } from "@/components/ui/tabs";
@@ -229,7 +230,7 @@ export function Agents() {
   const builtInAgentIds = useMemo(() => new Set(builtInByAgentId.keys()), [builtInByAgentId]);
   const [configureState, setConfigureState] = useState<BuiltInAgentState | null>(null);
 
-  const { data: agents, isLoading, error } = useQuery({
+  const { data: agents, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
     queryFn: () => agentsApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId,
@@ -530,9 +531,17 @@ export function Agents() {
         <p className="text-xs text-muted-foreground">{filtered.length} agent{filtered.length !== 1 ? "s" : ""}</p>
       )}
 
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="Agents could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetch()}>Try again</Button>}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
 
-      {agents && agents.length === 0 && (
+      {!error && agents && agents.length === 0 && (
         <EmptyState
           icon={Bot}
           message="Create your first agent to get started."

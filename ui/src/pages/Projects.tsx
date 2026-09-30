@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ArrowUpDown, Check, Hexagon, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { InlineBanner } from "../components/InlineBanner";
 
 type ProjectSortField = "name" | "updated" | "created" | "targetDate";
 type ProjectSortDir = "asc" | "desc";
@@ -87,7 +88,7 @@ export function Projects() {
     setBreadcrumbs([{ label: "Projects" }]);
   }, [setBreadcrumbs]);
 
-  const { data: allProjects, isLoading, error } = useQuery({
+  const { data: allProjects, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.projects.list(selectedCompanyId!),
     queryFn: () => projectsApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId,
@@ -174,9 +175,17 @@ export function Projects() {
         </Button>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="Projects could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetch()}>Try again</Button>}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
 
-      {!isLoading && projects.length === 0 && (
+      {!isLoading && !error && projects.length === 0 && (
         <EmptyState
           icon={Hexagon}
           message="No projects yet."

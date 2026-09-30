@@ -794,7 +794,7 @@ export function AgentDetail() {
     return confirmAgentConfigNavigation(configDirty);
   }, [configDirty]);
 
-  const { data: agent, isLoading, error } = useQuery<AgentDetailRecord>({
+  const { data: agent, isLoading, error, refetch: refetchAgent } = useQuery<AgentDetailRecord>({
     queryKey: [...queryKeys.agents.detail(routeAgentRef), lookupCompanyId ?? null],
     queryFn: () => agentsApi.get(routeAgentRef, lookupCompanyId),
     enabled: canFetchAgent,
@@ -1191,7 +1191,7 @@ export function AgentDetail() {
   }, [configDirty, prepareAgentNavigation]);
 
   if (isLoading) return <PageSkeleton variant="detail" />;
-  if (error) return <p className="text-sm text-destructive">{error.message}</p>;
+  if (error && !agent) return <InlineBanner tone="danger" title="The agent could not be loaded." actions={<Button size="sm" variant="outline" onClick={() => void refetchAgent()}>Try again</Button>}>{error.message}</InlineBanner>;
   if (!agent) return null;
   if (!urlRunId && !urlTab) {
     return <Navigate to={`/agents/${canonicalAgentRef}/dashboard`} replace />;

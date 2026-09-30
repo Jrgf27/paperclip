@@ -8,6 +8,7 @@ import { instanceSettingsApi } from "../api/instanceSettings";
 import { ProjectWorkspacesContent } from "../components/ProjectWorkspacesContent";
 import { SummarySlotCard } from "../components/SummarySlotCard";
 import { PageSkeleton } from "../components/PageSkeleton";
+import { InlineBanner } from "../components/InlineBanner";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useCompany } from "../context/CompanyContext";
 import type { ProjectWorkspaceSummary } from "../lib/project-workspaces-tab";
@@ -113,7 +114,17 @@ export function Workspaces() {
   if (experimentalSettingsQuery.isLoading) return <PageSkeleton variant="detail" />;
   if (!isolatedWorkspacesEnabled) return <Navigate to="/issues" replace />;
   if (dataLoading) return <PageSkeleton variant="list" />;
-  if (error) return <p className="text-sm text-destructive">{error.message}</p>;
+  if (error) {
+    return (
+      <InlineBanner
+        tone="danger"
+        title="Workspaces could not be loaded."
+        actions={<Button size="sm" variant="outline" onClick={() => void overviewQuery.refetch()}>Try again</Button>}
+      >
+        {error.message}
+      </InlineBanner>
+    );
+  }
 
   return (
     <div className="space-y-6">

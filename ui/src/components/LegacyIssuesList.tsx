@@ -58,6 +58,7 @@ import {
 } from "./IssueColumns";
 import { StatusIcon } from "./StatusIcon";
 import { EmptyState } from "./EmptyState";
+import { InlineBanner } from "./InlineBanner";
 import { Identity } from "./Identity";
 import { IssueGroupHeader } from "./IssueGroupHeader";
 import { IssueFiltersPopover } from "./IssueFiltersPopover";
@@ -467,6 +468,7 @@ interface IssuesListProps {
   issues: Issue[];
   isLoading?: boolean;
   error?: Error | null;
+  onRetryLoadIssues?: () => void;
   agents?: Agent[];
   projects?: ProjectOption[];
   liveIssueIds?: Set<string>;
@@ -683,6 +685,7 @@ export function IssuesList({
   issues,
   isLoading,
   error,
+  onRetryLoadIssues,
   agents,
   projects,
   liveIssueIds,
@@ -1905,7 +1908,15 @@ export function IssuesList({
       </div>
 
       {(isLoading || externalObjectFilterLoading) && <PageSkeleton variant="issues-list" />}
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="Tasks could not be refreshed."
+          actions={onRetryLoadIssues ? <Button size="sm" variant="outline" onClick={onRetryLoadIssues}>Try again</Button> : undefined}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
       {!searchWithinLoadedIssues && normalizedIssueSearch.length > 0 && searchedIssues.length === ISSUE_SEARCH_RESULT_LIMIT && (
         <p className="text-xs text-muted-foreground">
           Showing up to {ISSUE_SEARCH_RESULT_LIMIT} matches. Refine the search to narrow further.
@@ -1916,7 +1927,7 @@ export function IssuesList({
           Some board columns are showing up to {ISSUE_BOARD_COLUMN_RESULT_LIMIT} tasks. Refine filters or search to reveal the rest.
         </p>
       )}
-      {!isLoading && !externalObjectFilterLoading && filtered.length === 0 && viewState.viewMode === "list" && (
+      {!error && !isLoading && !externalObjectFilterLoading && filtered.length === 0 && viewState.viewMode === "list" && (
         <EmptyState
           icon={CircleDot}
           message="No tasks match the current filters or search."

@@ -33,6 +33,8 @@ export interface IssueRowProps {
   selected?: boolean;
   /** Opt-in canonical collection layout. Legacy remains the default until each surface migrates. */
   presentation?: IssueRowPresentation;
+  /** Adds the restrained glass surface used by the main Tasks collection. */
+  glassSurface?: boolean;
   /** Interactive disclosure or selection control before the canonical status glyph. */
   leadingControl?: ReactNode;
   /** Optional status override; defaults to the task's shared StatusIcon. */
@@ -122,6 +124,7 @@ export function IssueRow({
   issueLinkState,
   selected = false,
   presentation = "legacy",
+  glassSurface = false,
   leadingControl,
   statusSlot,
   metadata,
@@ -222,7 +225,9 @@ export function IssueRow({
         data-slot="task-row"
         data-unread={isUnread ? "true" : undefined}
         className={cn(
-          "group relative flex min-w-0 items-start gap-2 rounded-lg py-2.5 pr-2 text-sm no-underline text-inherit sm:items-center sm:py-2",
+          "group relative flex min-w-0 items-start gap-2 rounded-lg py-2.5 pr-2 text-sm no-underline text-inherit transition-colors sm:items-center sm:py-2",
+          glassSurface && treeGuides === 0 && "mb-1 rounded-xl border border-glass-stroke bg-glass-panel hover:bg-glass-panel-raised",
+          glassSurface && treeGuides > 0 && "rounded-lg bg-glass-panel/40 hover:bg-glass-panel/65",
           showUnreadSlot ? "pl-4" : "pl-2 sm:pl-4",
           "[&_button]:relative [&_button]:z-10",
           selected ? "bg-accent/50 hover:bg-accent/50" : "hover:bg-accent/50",
@@ -239,7 +244,7 @@ export function IssueRow({
           id={checklistRowId}
           aria-current={checklistCurrentStep ? "step" : undefined}
           onClickCapture={() => rememberIssueDetailLocationState(issuePathId, detailState)}
-          className="absolute inset-0 rounded-lg no-underline text-inherit focus-visible:z-10 focus-visible:outline-none focus-visible:ring-(length:--rad-3) focus-visible:ring-ring"
+          className="absolute inset-0 rounded-xl no-underline text-inherit focus-visible:z-10 focus-visible:outline-none focus-visible:ring-(length:--rad-3) focus-visible:ring-ring"
         >
           <span className="sr-only">Open {identifier}: {issue.title}</span>
         </Link>

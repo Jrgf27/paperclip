@@ -20,6 +20,7 @@ import { EmptyState } from "../components/EmptyState";
 import { FinanceBillerCard } from "../components/FinanceBillerCard";
 import { FinanceKindCard } from "../components/FinanceKindCard";
 import { FinanceTimelineCard } from "../components/FinanceTimelineCard";
+import { InlineBanner } from "../components/InlineBanner";
 import { Identity } from "../components/Identity";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { PageTabBar } from "../components/PageTabBar";
@@ -213,7 +214,7 @@ export function Costs({
   const weekRange = useMemo(() => currentWeekRange(), [today]);
   const companyId = selectedCompanyId ?? NO_COMPANY;
 
-  const { data: budgetData, isLoading: budgetLoading, error: budgetError } = useQuery({
+  const { data: budgetData, isLoading: budgetLoading, error: budgetError, refetch: refetchBudget } = useQuery({
     queryKey: queryKeys.budgets.overview(companyId),
     queryFn: () => budgetsApi.overview(companyId),
     enabled: !!selectedCompanyId && customReady,
@@ -251,7 +252,7 @@ export function Costs({
     onSuccess: invalidateBudgetViews,
   });
 
-  const { data: spendData, isLoading: spendLoading, error: spendError } = useQuery({
+  const { data: spendData, isLoading: spendLoading, error: spendError, refetch: refetchSpend } = useQuery({
     queryKey: queryKeys.costs(companyId, from || undefined, to || undefined),
     queryFn: async () => {
       const [summary, byAgent, byProject, byAgentModel] = await Promise.all([
@@ -265,7 +266,7 @@ export function Costs({
     enabled: !!selectedCompanyId && customReady && showSummaryChrome,
   });
 
-  const { data: financeData, isLoading: financeLoading, error: financeError } = useQuery({
+  const { data: financeData, isLoading: financeLoading, error: financeError, refetch: refetchFinance } = useQuery({
     queryKey: [
       queryKeys.financeSummary(companyId, from || undefined, to || undefined),
       queryKeys.financeByBiller(companyId, from || undefined, to || undefined),
@@ -311,7 +312,7 @@ export function Costs({
     return map;
   }, [spendData?.byAgentModel]);
 
-  const { data: providerData } = useQuery({
+  const { data: providerData, error: providerError, refetch: refetchProviders } = useQuery({
     queryKey: queryKeys.usageByProvider(companyId, from || undefined, to || undefined),
     queryFn: () => costsApi.byProvider(companyId, from || undefined, to || undefined),
     enabled: !!selectedCompanyId && customReady && (mainTab === "providers" || mainTab === "billers"),
@@ -319,7 +320,7 @@ export function Costs({
     staleTime: 10_000,
   });
 
-  const { data: billerData } = useQuery({
+  const { data: billerData, error: billerError, refetch: refetchBillers } = useQuery({
     queryKey: queryKeys.usageByBiller(companyId, from || undefined, to || undefined),
     queryFn: () => costsApi.byBiller(companyId, from || undefined, to || undefined),
     enabled: !!selectedCompanyId && customReady && mainTab === "billers",
@@ -327,7 +328,7 @@ export function Costs({
     staleTime: 10_000,
   });
 
-  const { data: weekData } = useQuery({
+  const { data: weekData, error: weekProviderError, refetch: refetchWeekProviders } = useQuery({
     queryKey: queryKeys.usageByProvider(companyId, weekRange.from, weekRange.to),
     queryFn: () => costsApi.byProvider(companyId, weekRange.from, weekRange.to),
     enabled: !!selectedCompanyId && (mainTab === "providers" || mainTab === "billers"),
@@ -335,7 +336,7 @@ export function Costs({
     staleTime: 10_000,
   });
 
-  const { data: weekBillerData } = useQuery({
+  const { data: weekBillerData, error: weekBillerError, refetch: refetchWeekBillers } = useQuery({
     queryKey: queryKeys.usageByBiller(companyId, weekRange.from, weekRange.to),
     queryFn: () => costsApi.byBiller(companyId, weekRange.from, weekRange.to),
     enabled: !!selectedCompanyId && mainTab === "billers",
@@ -343,7 +344,7 @@ export function Costs({
     staleTime: 10_000,
   });
 
-  const { data: windowData } = useQuery({
+  const { data: windowData, error: windowSpendError, refetch: refetchWindowSpend } = useQuery({
     queryKey: queryKeys.usageWindowSpend(companyId),
     queryFn: () => costsApi.windowSpend(companyId),
     enabled: !!selectedCompanyId && mainTab === "providers",
@@ -662,7 +663,13 @@ export function Costs({
           ) : showOverviewLoading ? (
             <PageSkeleton variant="costs" />
           ) : overviewError ? (
-            <p className="text-sm text-destructive">{(overviewError as Error).message}</p>
+            <InlineBanner
+              tone="danger"
+              title="Cost data is unavailable."
+              actions={<Button size="sm" variant="outline" onClick={() => { void refetchSpend(); void refetchFinance(); }}>Try again</Button>}
+            >
+              {(overviewError as Error).message}
+            </InlineBanner>
           ) : (
             <>
               {activeBudgetIncidents.length > 0 ? (
@@ -865,7 +872,13 @@ export function Costs({
           {budgetLoading ? (
             <PageSkeleton variant="costs" />
           ) : budgetError ? (
-            <p className="text-sm text-destructive">{(budgetError as Error).message}</p>
+            <InlineBanner
+              tone="danger"
+              title="Budget data is unavailable."
+              actions={<Button size="sm" variant="outline" onClick={() => void refetchBudget()}>Try again</Button>}
+            >
+              {(budgetError as Error).message}
+            </InlineBanner>
           ) : (
             <>
               <Card className="border-border/70 bg-(image:--gradient-extract-2)">
@@ -979,6 +992,15 @@ export function Costs({
         </TabsContent>
 
         <TabsContent value="providers" className="mt-4 space-y-4">
+          {(providerError || weekProviderError || windowSpendError) && (
+            <InlineBanner
+              tone="danger"
+              title="Some provider cost data is unavailable."
+              actions={<Button size="sm" variant="outline" onClick={() => { void refetchProviders(); void refetchWeekProviders(); void refetchWindowSpend(); }}>Try again</Button>}
+            >
+              {(providerError ?? weekProviderError ?? windowSpendError)?.message}
+            </InlineBanner>
+          )}
           {showCustomPrompt ? (
             <p className="text-sm text-muted-foreground">Select a start and end date to load data.</p>
           ) : (
@@ -1034,6 +1056,15 @@ export function Costs({
         </TabsContent>
 
         <TabsContent value="billers" className="mt-4 space-y-4">
+          {(billerError || weekBillerError || providerError || weekProviderError) && (
+            <InlineBanner
+              tone="danger"
+              title="Some biller cost data is unavailable."
+              actions={<Button size="sm" variant="outline" onClick={() => { void refetchBillers(); void refetchWeekBillers(); void refetchProviders(); void refetchWeekProviders(); }}>Try again</Button>}
+            >
+              {(billerError ?? weekBillerError ?? providerError ?? weekProviderError)?.message}
+            </InlineBanner>
+          )}
           {showCustomPrompt ? (
             <p className="text-sm text-muted-foreground">Select a start and end date to load data.</p>
           ) : (
@@ -1092,7 +1123,13 @@ export function Costs({
           ) : financeLoading ? (
             <PageSkeleton variant="costs" />
           ) : financeError ? (
-            <p className="text-sm text-destructive">{(financeError as Error).message}</p>
+            <InlineBanner
+              tone="danger"
+              title="Finance data is unavailable."
+              actions={<Button size="sm" variant="outline" onClick={() => void refetchFinance()}>Try again</Button>}
+            >
+              {(financeError as Error).message}
+            </InlineBanner>
           ) : (
             <>
               <FinanceSummaryCard

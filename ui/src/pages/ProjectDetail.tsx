@@ -21,6 +21,8 @@ import { StatusBadge } from "../components/StatusBadge";
 import { ProjectTile } from "../components/ProjectTile";
 import { BudgetPolicyCard } from "../components/BudgetPolicyCard";
 import { IssuesList } from "../components/IssuesList";
+import { InlineBanner } from "../components/InlineBanner";
+import { EmptyState } from "../components/EmptyState";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { PageTabBar } from "../components/PageTabBar";
 import { ProjectWorkspacesContent } from "../components/ProjectWorkspacesContent";
@@ -33,6 +35,7 @@ import { projectRouteRef } from "../lib/utils";
 import { PROJECT_ICONS } from "../lib/project-icons";
 import { usePublishSharedQueryData, useSharedPollingQuery } from "../hooks/useSharedPolling";
 import { Button } from "@/components/ui/button";
+import { FolderKanban } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -353,7 +356,7 @@ export function ProjectDetail() {
   }, [location.search]);
   const activeTab = activeRouteTab ?? pluginTabFromSearch;
 
-  const { data: project, isLoading, error } = useQuery({
+  const { data: project, isLoading, error, refetch: refetchProject } = useQuery({
     queryKey: [...queryKeys.projects.detail(routeProjectRef), lookupCompanyId ?? null],
     queryFn: () => projectsApi.get(routeProjectRef, lookupCompanyId),
     enabled: canFetchProject,
@@ -680,8 +683,20 @@ export function ProjectDetail() {
   }
 
   if (isLoading) return <PageSkeleton variant="detail" />;
-  if (error) return <p className="text-sm text-destructive">{error.message}</p>;
-  if (!project) return null;
+  if (error && !project) {
+    return (
+      <InlineBanner
+        tone="danger"
+        title="The project could not be loaded."
+        actions={<Button size="sm" variant="outline" onClick={() => void refetchProject()}>Try again</Button>}
+      >
+        {error.message}
+      </InlineBanner>
+    );
+  }
+  if (!project) {
+    return <EmptyState icon={FolderKanban} title="Project not found" message="It may have been deleted or the link may be incorrect." />;
+  }
   const showLeftProjectNotice =
     projectMembershipState === "left" && !dismissedLeftProjectIds.has(project.id);
   const projectMembershipPending =
@@ -716,6 +731,15 @@ export function ProjectDetail() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="The project could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetchProject()}>Try again</Button>}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
       {showLeftProjectNotice ? (
         <div className="flex items-center gap-3 border border-yellow-300/35 bg-yellow-300/10 px-3 py-2 text-sm text-yellow-900 dark:text-yellow-100">
           <p className="min-w-0 flex-1">

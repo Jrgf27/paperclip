@@ -59,6 +59,7 @@ import {
 } from "./IssueColumns";
 import { StatusIcon } from "./StatusIcon";
 import { EmptyState } from "./EmptyState";
+import { InlineBanner } from "./InlineBanner";
 import { Identity } from "./Identity";
 import { IssueGroupHeader } from "./IssueGroupHeader";
 import { IssueFiltersPopover } from "./IssueFiltersPopover";
@@ -463,6 +464,7 @@ interface IssuesListProps {
   issues: Issue[];
   isLoading?: boolean;
   error?: Error | null;
+  onRetryLoadIssues?: () => void;
   agents?: Agent[];
   projects?: ProjectOption[];
   liveIssueIds?: Set<string>;
@@ -476,6 +478,7 @@ interface IssuesListProps {
   searchWithinLoadedIssues?: boolean;
   baseCreateIssueDefaults?: Record<string, unknown>;
   createIssueLabel?: string;
+  showPageHeading?: boolean;
   defaultSortField?: IssueSortField;
   showProgressSummary?: boolean;
   /**
@@ -702,6 +705,7 @@ function StreamlinedIssuesList({
   issues,
   isLoading,
   error,
+  onRetryLoadIssues,
   agents,
   projects,
   liveIssueIds,
@@ -715,6 +719,7 @@ function StreamlinedIssuesList({
   searchWithinLoadedIssues = false,
   baseCreateIssueDefaults,
   createIssueLabel,
+  showPageHeading = false,
   defaultSortField,
   showProgressSummary = false,
   parentIssueIdForCostSummary,
@@ -1714,6 +1719,18 @@ function StreamlinedIssuesList({
 
   return (
     <div ref={rootRef} className="space-y-4">
+      {showPageHeading && (
+        <header className="flex flex-wrap items-center justify-between gap-4 pb-1">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Tasks</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Track and coordinate work across your company.</p>
+          </div>
+          <Button onClick={() => openCreateIssueDialog()}>
+            <Plus className="h-4 w-4" />
+            {createButtonLabel}
+          </Button>
+        </header>
+      )}
       {progressSummary ? (
         <SubIssueProgressSummaryStrip
           summary={progressSummary}
@@ -1724,9 +1741,9 @@ function StreamlinedIssuesList({
 
       {/* Toolbar */}
       <IssuesToolbar
-        className="paperclip-task-list-toolbar"
+        className="paperclip-task-list-toolbar rounded-xl border border-glass-stroke bg-glass-panel p-3 shadow-glass"
         ariaLabel={toolbarPresentation === "collection" ? "Task controls" : undefined}
-        context={(
+        context={!showPageHeading && (
           <Button size="sm" variant="outline" aria-label={createButtonLabel} onClick={() => openCreateIssueDialog()}>
             <Plus className="h-4 w-4 sm:mr-1" />
             <span className="hidden sm:inline">{createButtonLabel}</span>
@@ -1973,7 +1990,15 @@ function StreamlinedIssuesList({
       />
 
       {(isLoading || externalObjectFilterLoading) && <PageSkeleton variant="issues-list" />}
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {error && (
+        <InlineBanner
+          tone="danger"
+          title="Tasks could not be refreshed."
+          actions={onRetryLoadIssues ? <Button size="sm" variant="outline" onClick={onRetryLoadIssues}>Try again</Button> : undefined}
+        >
+          {error.message}
+        </InlineBanner>
+      )}
       {!searchWithinLoadedIssues && normalizedIssueSearch.length > 0 && searchedIssues.length === ISSUE_SEARCH_RESULT_LIMIT && (
         <p className="text-xs text-muted-foreground">
           Showing up to {ISSUE_SEARCH_RESULT_LIMIT} matches. Refine the search to narrow further.
@@ -1984,7 +2009,7 @@ function StreamlinedIssuesList({
           Some board columns are showing up to {ISSUE_BOARD_COLUMN_RESULT_LIMIT} tasks. Refine filters or search to reveal the rest.
         </p>
       )}
-      {!isLoading && !externalObjectFilterLoading && filtered.length === 0 && viewState.viewMode === "list" && (
+      {!error && !isLoading && !externalObjectFilterLoading && filtered.length === 0 && viewState.viewMode === "list" && (
         <EmptyState
           icon={CircleDot}
           message="No tasks match the current filters or search."
@@ -2165,6 +2190,7 @@ function StreamlinedIssuesList({
                       <IssueRow
                         issue={issue}
                         presentation={rowPresentation}
+                        glassSurface={showPageHeading && rowPresentation === "task"}
                         issueLinkState={issueLinkState}
                         selected={selectedNavKey === `issue:${issue.id}`}
                         onMouseEnter={() => setNavSelectionFromPointer(`issue:${issue.id}`)}

@@ -69,6 +69,7 @@ import {
   useLocalInboxArchiveIssueIds,
 } from "../lib/inboxArchiveCache";
 import { EmptyState } from "../components/EmptyState";
+import { InlineBanner } from "../components/InlineBanner";
 import { IssueGroupHeader } from "../components/IssueGroupHeader";
 import { PageSkeleton } from "../components/PageSkeleton";
 import {
@@ -794,6 +795,7 @@ export function Inbox() {
     data: approvals,
     isLoading: isApprovalsLoading,
     error: approvalsError,
+    refetch: refetchApprovals,
   } = useQuery({
     queryKey: queryKeys.approvals.list(selectedCompanyId!),
     queryFn: () => approvalsApi.list(selectedCompanyId!),
@@ -2579,8 +2581,16 @@ export function Inbox() {
         </div>
       )}
 
-      {approvalsError && <p className="text-sm text-destructive">{approvalsError.message}</p>}
-      {actionError && <p className="text-sm text-destructive">{actionError}</p>}
+      {approvalsError && (
+        <InlineBanner
+          tone="danger"
+          title="Approvals could not be refreshed."
+          actions={<Button size="sm" variant="outline" onClick={() => void refetchApprovals()}>Try again</Button>}
+        >
+          {approvalsError.message}
+        </InlineBanner>
+      )}
+      {actionError && <InlineBanner tone="danger" title="The inbox action failed.">{actionError}</InlineBanner>}
 
       {tab === "blocked" ? (
         <BlockedInboxView
