@@ -27,6 +27,10 @@ PAPERCLIP_PORT=3200 PAPERCLIP_DATA_DIR=../data/pc \
 
 **Note:** `PAPERCLIP_DATA_DIR` is resolved relative to the compose file (`docker/`), so `../data/pc` maps to `data/pc` in the project root.
 
+For a public, customer-owned Linux VPS deployment built from your checked-out
+fork, with HTTPS, backups, and commit-pinned upgrades, use the [Docker VPS
+deployment guide](vps-docker.md).
+
 ## Manual Docker Build
 
 ```sh

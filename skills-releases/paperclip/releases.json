@@ -12,5 +12,12 @@
     "releasedAt": "2026-07-21",
     "notes": "Adopted by PAP-14624 G3 confirmation card 9c304fc2. This frozen historical release predates three later master edits to SKILL.md, references/api-reference.md, and references/company-skills.md; the live default keeps the newer guidance.",
     "dir": "v7-roster"
+  },
+  {
+    "id": "v8-git-identity",
+    "releaseName": "V8 — Git identity",
+    "releasedAt": "2026-09-30",
+    "notes": "Fork-specific release preserving the configured human Git author and committer identity.",
+    "dir": "v8-git-identity"
   }
 ]
