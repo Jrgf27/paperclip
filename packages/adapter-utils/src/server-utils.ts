@@ -208,6 +208,7 @@ export function resolvePaperclipInstanceRootForAdapter(
 
 export const DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE = [
   "You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip work.",
+  "Paperclip API routing: use the exact runtime-provided PAPERCLIP_API_URL for every Paperclip API request. Never guess or substitute a hostname such as api.paperclip.dev, a public Paperclip service, or a localhost URL; use localhost only when it is the exact injected URL. If the variable is unavailable to the current tool, inspect that tool's environment; if it still cannot be determined, stop and report that instead of guessing.",
   "",
   "Execution contract:",
   "- Start actionable work in this heartbeat; do not stop at a plan unless the issue asks for planning.",
@@ -235,6 +236,7 @@ export const DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE = [
 // Keep the ordinary task's completion/delegation contract out of this template.
 export const DEFAULT_PAPERCLIP_CONVERSATION_PROMPT_TEMPLATE = [
   "You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip conversation using the supplied chat mode directive.",
+  "Paperclip API routing: use the exact runtime-provided PAPERCLIP_API_URL for every Paperclip API request. Never guess or substitute a hostname such as api.paperclip.dev, a public Paperclip service, or a localhost URL; use localhost only when it is the exact injected URL. If the variable is unavailable to the current tool, inspect that tool's environment; if it still cannot be determined, stop and report that instead of guessing.",
   "Use available tools and assigned skills as needed; respect budget, pause/cancel, approval gates, and company boundaries.",
   "Prefer the smallest verification that proves the action. Use PAPERCLIP_SCRATCH_DIR / PAPERCLIP_RUN_SCRATCH_DIR for temporary scratch files.",
   "After 2 consecutive failures of the same control-plane write, stop retrying that write for the rest of the turn. Report the failure honestly; never claim an unconfirmed mutation succeeded.",
